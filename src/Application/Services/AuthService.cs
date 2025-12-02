@@ -1,9 +1,6 @@
 ﻿using Application.DTO.Auth;
-using Application.DTO.Patients;
 using Application.Interfaces.Services;
 using Application.Mappings.Users;
-using Domain.Entities;
-using Domain.Entities.Profiles;
 using Domain.Interfaces.Repositories;
 using Domain.Interfaces.Security;
 
@@ -146,20 +143,6 @@ public class AuthService : IAuthService
             AccessToken: jwt.AccessToken,
             ExpiresAt: jwt.ExpiresAt,
             User: user.ToSummaryDto()
-        );
-    }
-    public async Task<PatientInviteDto> CheckInviteAsync(Guid token, CancellationToken ct = default)
-    {
-        var invite = await _patientInviteRepository.GetActiveByTokenAsync(token, ct);
-
-        if (invite is null)
-            throw new InvalidOperationException("Convite inválido ou expirado.");
-
-        return new PatientInviteDto(
-            Token: invite.Token,
-            ProfessionalUserId: invite.ProfessionalUserId,
-            ExpiresAt: invite.ExpiresAt,
-            IsUsed: invite.IsUsed
         );
     }
 }

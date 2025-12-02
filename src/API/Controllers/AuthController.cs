@@ -1,6 +1,5 @@
 ﻿using Application.Common.Responses;
 using Application.DTO.Auth;
-using Application.DTO.Patients;
 using Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -28,9 +27,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register/professional")]
     [AllowAnonymous]
-    public async Task<IActionResult> RegisterProfessional(
-        [FromBody] RegisterProfessionalRequest request,
-        CancellationToken ct)
+    public async Task<IActionResult> RegisterProfessional([FromBody] RegisterProfessionalRequest request, CancellationToken ct)
     {
         var result = await _authService.RegisterProfessionalAsync(request, ct);
         return Ok(ApiResponse<LoginResponse>.Ok(result));
@@ -38,19 +35,9 @@ public class AuthController : ControllerBase
 
     [HttpPost("register/patient")]
     [AllowAnonymous]
-    public async Task<IActionResult> RegisterPatient(
-        [FromBody] RegisterPatientRequest request,
-        CancellationToken ct)
+    public async Task<IActionResult> RegisterPatient([FromBody] RegisterPatientRequest request, CancellationToken ct)
     {
         var result = await _authService.RegisterPatientAsync(request, ct);
         return Ok(ApiResponse<LoginResponse>.Ok(result));
-    }
-
-    [HttpGet("invite/{token:guid}")]
-    [AllowAnonymous]
-    public async Task<IActionResult> CheckInvite(Guid token, CancellationToken ct)
-    {
-        var invite = await _authService.CheckInviteAsync(token, ct);
-        return Ok(ApiResponse<PatientInviteDto>.Ok(invite));
     }
 }
