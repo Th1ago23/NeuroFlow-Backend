@@ -24,7 +24,13 @@ public class MoodEntry
     public Guid PatientId { get; private set; }
     public Patient Patient { get; private set; } = null!;
 
-    public MoodLevel Level { get; private set; }      // enum de humor
-    public string? Note { get; private set; }         // opcional
-    public DateTime CreatedAt { get; private set; }   // timestamp exato da entrada
+    public MoodLevel Level { get; private set; }
+    public string? Note { get; private set; }
+    public DateTime CreatedAt { get; private set; }
+
+    public void Update(MoodLevel level, string? note)
+    {
+        Level = level;
+        Note = note;
+    }
 }

@@ -18,4 +18,20 @@ public class MoodEntryRepository : BaseRepository<MoodEntry>, IMoodEntryReposito
             .OrderByDescending(m => m.CreatedAt)
             .ToListAsync();
     }
+    public async Task<IEnumerable<MoodEntry>> GetRecentAsync(Guid patientId, int limit = 20, CancellationToken ct = default)
+    {
+        return await _dbSet
+            .Where(m => m.PatientId == patientId)
+            .OrderByDescending(m => m.CreatedAt)
+            .Take(limit)
+            .ToListAsync(ct);
+    }
+
+    public async Task<IEnumerable<MoodEntry>> GetByDateRangeAsync(Guid patientId, DateTime start, DateTime end, CancellationToken ct = default)
+    {
+        return await _dbSet
+            .Where(m => m.PatientId == patientId && m.CreatedAt >= start && m.CreatedAt <= end)
+            .OrderByDescending(m => m.CreatedAt)
+            .ToListAsync(ct);
+    }
 }

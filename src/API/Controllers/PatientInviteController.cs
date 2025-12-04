@@ -31,10 +31,13 @@ public class PatientInviteController : ControllerBase
         return Ok(ApiResponse<PatientInviteDto>.Ok(invite,"Convite criado com sucesso"));
     }
     [AllowAnonymous]
-    [HttpGet]
+    [HttpGet("{token:guid}")]
     public async Task<IActionResult> ValidateInvite(Guid token, CancellationToken ct)
     {
         var validation = await _service.ValidateInviteAsync(token, ct);
+
+        if (validation is null)
+            return BadRequest(ApiResponse.Fail("Convite inválido ou expirado."));
 
         return Ok(ApiResponse<PatientInviteDto>.Ok(validation,"Convite validado com sucesso"));
         

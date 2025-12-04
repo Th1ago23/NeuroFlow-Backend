@@ -4,7 +4,9 @@ namespace Application.Interfaces.Mood;
 
 public interface IMoodEntryService
 {
-    Task<Guid> CreateAsync(CreateMoodEntryRequest request);
-    Task<IEnumerable<MoodEntryDto>> GetByPatientAsync(Guid patientId);
-    Task<MoodStatsDto> GetStatsAsync(Guid patientId);
+    Task<MoodEntryDto> CreateAsync(CreateMoodEntryRequest request, Guid professionalId, CancellationToken ct);
+    Task<IEnumerable<MoodEntryDto>> GetRecentAsync(Guid patientId, int limit, Guid professionalId, CancellationToken ct);
+    Task<IEnumerable<MoodEntryDto>> GetByDateRangeAsync(Guid patientId, DateTime start, DateTime end, Guid professionalId, CancellationToken ct);
+    Task<MoodEntryDto> UpdateAsync(UpdateMoodEntryRequest request, Guid professionalId, CancellationToken ct);
+    Task<bool> DeleteAsync(Guid id, Guid professionalId, CancellationToken ct);
 }
