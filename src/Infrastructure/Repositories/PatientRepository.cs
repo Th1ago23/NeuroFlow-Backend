@@ -21,4 +21,14 @@ public class PatientRepository : BaseRepository<Patient>, IPatientRepository
             .Where(p => p.OwnerProfessionalId == professionalUserId)
             .ToListAsync();
     }
+    public async Task<Patient> GetByUserId(Guid userId, CancellationToken ct)
+    {
+        return await _dbSet
+            .Include(i => i.MoodEntries)
+            .Include(i=> i.ThoughtEntries)
+            .Include(i => i.Address)
+            .Include(i => i.Assessments)
+            .Include(i => i.Notes)
+            .FirstOrDefaultAsync(i => i.UserAccountId == userId,ct);
+    }
 }

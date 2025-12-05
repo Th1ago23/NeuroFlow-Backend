@@ -8,21 +8,18 @@ public class HomeworkConfig : IEntityTypeConfiguration<Homework>
 {
     public void Configure(EntityTypeBuilder<Homework> builder)
     {
-        builder.ToTable("Homeworks");
+        builder.HasKey(h => h.Id);
 
-        builder.HasKey(x => x.Id);
+        builder.HasOne(h => h.Patient)
+            .WithMany(p => p.Homework)
+            .HasForeignKey(h => h.PatientId);
 
-        builder.Property(x => x.Title)
-               .HasMaxLength(120)
-               .IsRequired();
+        builder.HasOne(h => h.Professional)
+            .WithMany()
+            .HasForeignKey(h => h.ProfessionalUserId);
 
-        builder.Property(x => x.Description)
-               .HasMaxLength(500);
-
-        builder.Property(x => x.ExpirationTime)
-               .IsRequired();
-
-        builder.Property(x => x.IsDone)
-               .IsRequired();
+        builder.Property(h => h.Title)
+            .IsRequired()
+            .HasMaxLength(200);
     }
 }

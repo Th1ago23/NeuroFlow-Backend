@@ -1,8 +1,10 @@
-﻿namespace Application.DTO.Mood
+﻿using Domain.Enums;
+
+namespace Application.DTO.Mood
 {
     public sealed record UpdateMoodEntryRequest(
         Guid Id,
-        int Level,
+        MoodLevel Level,
         string? Note
     );
 }

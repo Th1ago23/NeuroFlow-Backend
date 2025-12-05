@@ -3,8 +3,7 @@
 public enum UserRole
 {
     Admin = 1,
-    Psychologist = 2,
-    Psychiatrist = 3,
-    Patient = 4,
-    Assistent = 5,
+    Professional = 2,
+    Patient = 3,
+    Assistent = 4,
 }

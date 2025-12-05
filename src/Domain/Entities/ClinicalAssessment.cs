@@ -35,5 +35,12 @@ public class ClinicalAssessment
     public string? Recommendations { get; private set; }
 
     public DateTime CreatedAt { get; private set; }
+
+    public void Update(string summary, string? diagnosis, string? recommendations)
+    {
+        Summary = summary;
+        Diagnosis = diagnosis;
+        Recommendations = recommendations;
+    }
 }
 

@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <Folder Include="DTO\Security\" />
+    <Folder Include="Interfaces\Mood\" />
   </ItemGroup>
 
 </Project>

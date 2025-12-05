@@ -15,4 +15,8 @@ public class UserRepository : BaseRepository<User>, IUserRepository
     {
         return await _dbSet.FirstOrDefaultAsync(u => u.Email.Address == email);
     }
+    public async Task<User?> GetById(Guid id)
+    {
+        return await _dbSet.FirstOrDefaultAsync(i=> i.Id == id);
+    }
 }
