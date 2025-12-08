@@ -1,15 +1,21 @@
 using API.Middlewares;
+using Application.Interfaces.Http;
+using Application.Interfaces.Logging;
 using Application.Interfaces.Services;
 using Application.Services;
 using Domain.Interfaces.Repositories;
 using Domain.Interfaces.Security;
 using Infrastructure.Auth;
 using Infrastructure.Configurations;
+using Infrastructure.HttpAcessor;
+using Infrastructure.Logging;
 using Infrastructure.Repositories;
+using Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 using System.Text;
 using System.Text.Json;
 
@@ -71,7 +77,35 @@ builder.Services.AddRateLimiter(options =>
         opt.Window = TimeSpan.FromSeconds(10);
         opt.QueueLimit = 0;
     });
+    options.AddFixedWindowLimiter("document-verification", limiterOptions =>
+    {
+        limiterOptions.PermitLimit = 3;
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.QueueLimit = 0;
+    });
 });
+builder.Services.AddHttpClient<CrpVerifier>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+builder.Services.AddHttpClient<CrmVerifier>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+builder.Services.AddSingleton<IProfessionalDocumentVerifier>(sp =>
+{
+    var env = sp.GetRequiredService<IHostEnvironment>();
+
+    if (env.IsDevelopment())
+        return new MockDocumentVerifier();
+
+    return new ProfessionalDocumentVerifier(
+        sp.GetRequiredService<CrpVerifier>(),
+        sp.GetRequiredService<CrmVerifier>()
+    );
+});
+builder.Services.Configure<MercadoPagoSettings>(
+    builder.Configuration.GetSection("MercadoPago"));
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
@@ -95,6 +129,22 @@ builder.Services.AddTransient<ErrorHandlingMiddleware>();
 builder.Services.AddTransient<ValidationMiddleware>();
 builder.Services.AddTransient<CorrelationIdMiddleware>();
 builder.Services.AddTransient<RequestLoggingMiddleware>();
+
+builder.Services.AddSingleton(typeof(IAppLogger<>), typeof(SerilogAppLogger<>));
+
+
+Log.Logger = new LoggerConfiguration()
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.File(
+        path: "logs/verification-.json",
+        rollingInterval: RollingInterval.Day,
+        formatter: new Serilog.Formatting.Json.JsonFormatter()
+)
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+
 
 var app = builder.Build();
 

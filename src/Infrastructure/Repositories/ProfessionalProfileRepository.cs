@@ -15,4 +15,13 @@ public class ProfessionalProfileRepository : BaseRepository<ProfessionalProfile>
     {
         return await _dbSet.FirstOrDefaultAsync(p => p.DocumentNumber == documentNumber);
     }
+    public async Task<ProfessionalProfile?> GetByUserIdAsync(Guid userId, CancellationToken ct)
+    {
+        return await _dbSet.FirstOrDefaultAsync(p => p.UserId == userId, ct);
+    }
+
+    public async Task<ProfessionalProfile?> GetBySubscriptionIdAsync(string subscriptionId, CancellationToken ct)
+    {
+        return await _dbSet.FirstOrDefaultAsync(p => p.SubscriptionId == subscriptionId, ct);
+    }
 }

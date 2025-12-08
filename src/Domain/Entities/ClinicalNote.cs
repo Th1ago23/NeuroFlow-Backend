@@ -18,5 +18,10 @@ public class ClinicalNote
 
     public Guid PatientId { get; private set; }
     public Patient Patient { get; private set; } = null!;
+
+    public void Update(string newNote)
+    {
+        Note = newNote;
+    }
 }
 

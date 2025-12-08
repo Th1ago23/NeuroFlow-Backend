@@ -14,10 +14,10 @@ public static class HomeworkMappings
             IsDone: homework.IsDone
         );
 
-    public static Homework ToEntity(this CreateHomeworkRequest request)
-        => new(
-            title: request.Title,
-            expirationTime: request.ExpirationTime,
-            description: request.Description
-        );
+    //public static Homework ToEntity(this CreateHomeworkRequest request)
+    //    => new(
+    //        title: request.Title,
+    //        expirationTime: request.ExpirationTime,
+    //        description: request.Description
+    //    );
 }

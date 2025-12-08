@@ -1,4 +1,5 @@
-﻿using Domain.ValueObjects;
+﻿using Domain.Enums;
+using Domain.ValueObjects;
 
 namespace Domain.Entities.Profiles
 {
@@ -27,23 +28,64 @@ namespace Domain.Entities.Profiles
         public Guid UserId { get; private set; }
         public User User { get; private set; } = null!;
 
-        public string DocumentNumber { get; private set; }  // CRM/CRP
+        public string DocumentNumber { get; private set; }
         public string Speciality { get; private set; }
         public Address Address { get; private set; }
 
         public bool IsVerified { get; private set; }
         public string? DocumentFileUrl { get; private set; }
-
         public bool IsPremium { get; private set; }
+        public string? SubscriptionId { get; private set; }
+        public DateTime? PremiumActivatedAt { get; private set; }
+        public DateTime? NextBillingDate { get; private set; }
+        public SubscriptionStatus? SubscriptionStatus { get; private set; }
+        public void MarkSubscriptionCreated(string subscriptionId)
+        {
+            SubscriptionId = subscriptionId;
+            SubscriptionStatus = Domain.Enums.SubscriptionStatus.Active;
+            IsPremium = false;
+            PremiumActivatedAt = null;
+            NextBillingDate = null;
+        }
+        public void ActivatePremium(string subscriptionId, DateTime nextBillingDate)
+        {
+            IsPremium = true;
+            SubscriptionId = subscriptionId;
+            PremiumActivatedAt = DateTime.UtcNow;
+            NextBillingDate = nextBillingDate;
+            SubscriptionStatus = Domain.Enums.SubscriptionStatus.Active;
+        }
+        public void UpdateBilling(DateTime nextBillingDate)
+        {
+            NextBillingDate = nextBillingDate;
+        }
+        public void CancelPremium()
+        {
+            SubscriptionStatus = Domain.Enums.SubscriptionStatus.Cancelled;
+            IsPremium = false;
+        }
+        public void PausePremium()
+        {
+            IsPremium = false;
+            SubscriptionStatus = Domain.Enums.SubscriptionStatus.Paused;
+        }
+
+        public void MarkChargeFailed()
+        {
+            IsPremium = false;
+            SubscriptionStatus = Domain.Enums.SubscriptionStatus.ChargeFailed;
+        }
+
         public void Verify(string documentFileUrl)
         {
             DocumentFileUrl = documentFileUrl;
             IsVerified = true;
         }
 
-        public void UpgradeToPremium()
+        public void UpdateProfile(string speciality,  Address address)
         {
-            IsPremium = true;
+            Address = address;
+            Speciality = speciality;
         }
     }
 }

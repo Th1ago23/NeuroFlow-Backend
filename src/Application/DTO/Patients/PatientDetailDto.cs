@@ -8,6 +8,6 @@ public sealed record PatientDetailDto(
     DateOnly BirthDate,
     GenderDto Gender,
     AddressDto? Address,
-    Guid OwnerProfessionalId,
+    Guid? OwnerProfessionalId,
     bool IsActive
 );

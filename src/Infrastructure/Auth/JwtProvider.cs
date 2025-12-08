@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using System.Text;
 using Domain.Entities.Security;
+using Domain.Enums;
 using Domain.Interfaces.Repositories;
 using Domain.Interfaces.Security;
 using Microsoft.AspNetCore.Http;
@@ -29,36 +30,32 @@ public class JwtProvider : IJwtProvider
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public async Task<JwtTokenResult> GenerateTokenAsync(
-        Guid userId,
-        string email,
-        string role,
-        bool isVerifiedProfessional,
-        bool isPremium,
-        CancellationToken ct = default)
+    public async Task<JwtTokenResult> GenerateTokenAsync(Guid userId,string email,string role,bool isVerifiedProfessional,bool isPremium,CancellationToken ct = default)
     {
         var now = DateTime.UtcNow;
         var expires = now.AddMinutes(_settings.ExpirationMinutes);
 
-        // jti = identificador único do token
         var jti = Guid.NewGuid().ToString();
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.SecretKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var claims = new List<Claim>
-        {
-            new(JwtRegisteredClaimNames.Sub, userId.ToString()),
-            new(JwtRegisteredClaimNames.Email, email),
-            new(ClaimTypes.Role, role),
-            new(JwtRegisteredClaimNames.Jti, jti),
-            new("uid", userId.ToString()),
-            new("verified", isVerifiedProfessional.ToString().ToLowerInvariant()),
-            new("premium", isPremium.ToString().ToLowerInvariant()),
-            new(JwtRegisteredClaimNames.Iat,
-                new DateTimeOffset(now).ToUnixTimeSeconds().ToString(),
-                ClaimValueTypes.Integer64)
-        };
+{
+    new(JwtRegisteredClaimNames.Sub, userId.ToString()),
+    new(JwtRegisteredClaimNames.Email, email),
+    new(ClaimTypes.Role, role),
+    new(JwtRegisteredClaimNames.Jti, jti),
+    new("uid", userId.ToString()),
+    new("verified", isVerifiedProfessional.ToString().ToLowerInvariant()),
+    new("premium", isPremium.ToString().ToLowerInvariant()),
+    new("plan", isPremium ? "premium" : "free"),
+    //new("subscription_status", subscriptionStatus.ToString()),
+    //new("next_billing", nextBillingDate?.ToString("o") ?? ""),
+    new(JwtRegisteredClaimNames.Iat,
+        new DateTimeOffset(now).ToUnixTimeSeconds().ToString(),
+        ClaimValueTypes.Integer64)
+};
 
         var token = new JwtSecurityToken(
             issuer: _settings.Issuer,
@@ -71,7 +68,6 @@ public class JwtProvider : IJwtProvider
 
         var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
-        // Dados de auditoria
         var httpContext = _httpContextAccessor.HttpContext;
         var ip = httpContext?.Connection.RemoteIpAddress?.ToString();
         var userAgent = httpContext?.Request.Headers["User-Agent"].ToString();
@@ -88,10 +84,6 @@ public class JwtProvider : IJwtProvider
         await _tokenAuditRepository.AddAsync(audit, ct);
         await _uow.CommitAsync();
 
-        return new JwtTokenResult(
-            AccessToken: tokenString,
-            ExpiresAt: expires,
-            Jti: jti
-        );
+        return new JwtTokenResult(AccessToken: tokenString,ExpiresAt: expires,Jti: jti);
     }
 }
