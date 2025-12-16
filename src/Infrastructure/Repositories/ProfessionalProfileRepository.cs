@@ -17,7 +17,10 @@ public class ProfessionalProfileRepository : BaseRepository<ProfessionalProfile>
     }
     public async Task<ProfessionalProfile?> GetByUserIdAsync(Guid userId, CancellationToken ct)
     {
-        return await _dbSet.FirstOrDefaultAsync(p => p.UserId == userId, ct);
+        return await _dbSet
+                        .Include(i=> i.User)
+                            .ThenInclude(i=>i.Email)
+                        .FirstOrDefaultAsync(p => p.UserId == userId, ct);
     }
 
     public async Task<ProfessionalProfile?> GetBySubscriptionIdAsync(string subscriptionId, CancellationToken ct)

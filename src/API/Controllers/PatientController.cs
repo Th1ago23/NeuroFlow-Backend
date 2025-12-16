@@ -23,7 +23,6 @@ public class PatientController : ControllerBase
     private string GetUserRole() => User.FindFirstValue("role")!;
 
     [HttpPost]
-    [Authorize(Roles = "Patient")]
     public async Task<IActionResult> Create([FromBody] CreatePatientRequest request,CancellationToken ct)
     {
         try
@@ -57,7 +56,7 @@ public class PatientController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Professional")]
+    [Authorize(Roles = "Admin,Professional,Assistent")]
     public async Task<IActionResult> GetMyPatients(CancellationToken ct)
     {
         try
@@ -74,7 +73,7 @@ public class PatientController : ControllerBase
     }
 
     [HttpGet("{patientId:guid}")]
-    [Authorize]
+    [Authorize(Roles = "Admin,Professional,Assistent,Patient")]
     public async Task<IActionResult> GetById(Guid patientId, CancellationToken ct)
     {
         try
@@ -115,7 +114,7 @@ public class PatientController : ControllerBase
     }
 
     [HttpPost("{patientId:guid}/unassign")]
-    [Authorize(Roles = "Professional")]
+    [Authorize(Roles = "Admin,Professional")]
     public async Task<IActionResult> Unassign(Guid patientId, CancellationToken ct)
     {
         try

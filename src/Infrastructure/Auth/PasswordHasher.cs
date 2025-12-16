@@ -6,9 +6,9 @@ namespace Infrastructure.Auth;
 
 public class PasswordHasher : IPasswordHasher
 {
-    private const int SaltSize = 16;       // 128 bits
-    private const int KeySize = 32;        // 256 bits
-    private const int Iterations = 100000; // segurança moderna
+    private const int SaltSize = 16;
+    private const int KeySize = 32;
+    private const int Iterations = 100000;
 
     private static readonly HashAlgorithmName Algorithm = HashAlgorithmName.SHA256;
 

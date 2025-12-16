@@ -9,7 +9,7 @@ namespace API.Controllers;
 
 [ApiController]
 [Route("api/clinical-notes")]
-[Authorize(Roles = "Professional")]
+[Authorize(Roles = "Admin,Professional,Assistent")]
 public class ClinicalNotesController : ControllerBase
 {
     private readonly IClinicalNoteService _service;
@@ -20,13 +20,11 @@ public class ClinicalNotesController : ControllerBase
     }
 
     private Guid GetUserId() => Guid.Parse(User.FindFirstValue("uid")!);
-
     private string GetUserRole() => User.FindFirstValue(ClaimTypes.Role)!;
 
+
     [HttpPost]
-    public async Task<IActionResult> Create(
-        [FromBody] CreateClinicalNoteRequest request,
-        CancellationToken ct)
+    public async Task<IActionResult> Create([FromBody] CreateClinicalNoteRequest request,CancellationToken ct)
     {
         var requesterId = GetUserId();
         var requesterRole = GetUserRole();

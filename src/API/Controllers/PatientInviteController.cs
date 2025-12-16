@@ -9,7 +9,7 @@ using System.Security.Claims;
 namespace API.Controllers;
 [ApiController]
 [Route("api/patient-invites")]
-[Authorize(Roles = "Professional")]
+[Authorize(Roles = "Professional,Admin")]
 public class PatientInviteController : ControllerBase
 {
     private readonly IPatientInviteService _service;

@@ -24,10 +24,7 @@ namespace API.Controllers
         private Guid GetUserId() => Guid.Parse(User.FindFirstValue("uid")!);
 
         [HttpPost("subscribe")]
-        [Authorize(Roles = "Professional")]
-        public async Task<IActionResult> CreateSubscription(
-            [FromQuery] PremiumTier tier,
-            CancellationToken ct)
+        public async Task<IActionResult> CreateSubscription([FromQuery] PremiumTier tier,CancellationToken ct)
         {
             var userId = GetUserId();
             var result = await _premiumService.CreateSubscriptionAsync(userId, tier, ct);
@@ -83,19 +80,19 @@ namespace API.Controllers
         {
             var plans = new[]
             {
-        new PricingPlanDto(
-            Tier: PremiumTier.Premium,
-            Name: "Premium",
-            Price: 29.99m,
-            Description: "Acesso completo às funcionalidades profissionais."
-        ),
-        new PricingPlanDto(
-            Tier: PremiumTier.PremiumPlus,
-            Name: "Premium Plus",
-            Price: 79.99m,
-            Description: "Inclui IA avançada, transcrição e recomendações automáticas."
-        )
-    };
+                new PricingPlanDto(
+                    Tier: PremiumTier.Premium,
+                    Name: "Premium",
+                    Price: 29.99m,
+                    Description: "Acesso completo às funcionalidades profissionais."
+                ),
+                new PricingPlanDto(
+                    Tier: PremiumTier.PremiumPlus,
+                    Name: "Premium Plus",
+                    Price: 79.99m,
+                    Description: "Inclui IA avançada, transcrição e recomendações automáticas."
+                )
+            };
 
             return Ok(ApiResponse<IEnumerable<PricingPlanDto>>.Ok(plans));
         }

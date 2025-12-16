@@ -30,16 +30,13 @@ public class ClinicalAssessmentController : ControllerBase
         User.FindFirstValue("role")!;
 
     [HttpPost]
-    [Authorize]
+    [Authorize(Roles = "Admin,Professional,Assistent")]
     public async Task<IActionResult> Create([FromBody] CreateClinicalAssessmentRequest request)
     {
         try
         {
             var role = GetUserRole();
             var requesterId = GetUserId();
-
-            if (role != "Professional")
-                return Forbid();
 
             if (requesterId != request.ProfessionalUserId)
                 return Forbid("Você só pode registrar avaliações como você mesmo.");
@@ -55,7 +52,7 @@ public class ClinicalAssessmentController : ControllerBase
     }
 
     [HttpGet("patient/{patientId:guid}")]
-    [Authorize]
+    [Authorize(Roles = "Admin,Professional,Assistent")]
     public async Task<IActionResult> GetByPatient(Guid patientId)
     {
         try
@@ -88,16 +85,12 @@ public class ClinicalAssessmentController : ControllerBase
     }
 
     [HttpPut("{assessmentId:guid}")]
-    [Authorize]
-    public async Task<IActionResult> Update(
-        Guid assessmentId,
-        [FromBody] UpdateClinicalAssessmentRequest request)
+    [Authorize(Roles = "Admin,Professional,Assistent")]
+    public async Task<IActionResult> Update(Guid assessmentId,[FromBody] UpdateClinicalAssessmentRequest request)
     {
         try
         {
             var role = GetUserRole();
-            if (role != "Professional")
-                return Forbid();
 
             await _assessmentService.UpdateAsync(assessmentId, request);
 
@@ -110,14 +103,12 @@ public class ClinicalAssessmentController : ControllerBase
     }
 
     [HttpDelete("{assessmentId:guid}")]
-    [Authorize]
+    [Authorize(Roles = "Admin,Professional,Assistent")]
     public async Task<IActionResult> Delete(Guid assessmentId)
     {
         try
         {
             var role = GetUserRole();
-            if (role != "Professional")
-                return Forbid();
 
             await _assessmentService.DeleteAsync(assessmentId);
 

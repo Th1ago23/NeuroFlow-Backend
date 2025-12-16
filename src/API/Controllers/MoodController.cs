@@ -57,7 +57,7 @@ public class MoodController : ControllerBase
     }
 
     [HttpGet("recent/{patientId:guid}")]
-    [Authorize]
+    [Authorize(Roles = "Admin,Professional,Assistent")]
     public async Task<IActionResult> GetRecent(Guid patientId,[FromQuery] int limit = 10,CancellationToken ct = default)
     {
         var requesterUserId = GetUserId();
@@ -70,7 +70,7 @@ public class MoodController : ControllerBase
 
 
     [HttpGet("stats/{patientId:guid}")]
-    [Authorize]
+    [Authorize(Roles = "Admin,Professional,Assistent")]
     public async Task<IActionResult> GetStats(Guid patientId, CancellationToken ct)
     {
         var requesterUserId = GetUserId();

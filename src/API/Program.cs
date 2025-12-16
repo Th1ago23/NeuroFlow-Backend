@@ -1,6 +1,7 @@
 using API.Middlewares;
 using Application.Interfaces.Http;
 using Application.Interfaces.Logging;
+using Application.Interfaces.Premium;
 using Application.Interfaces.Services;
 using Application.Services;
 using Domain.Interfaces.Repositories;
@@ -10,6 +11,7 @@ using Infrastructure.Background.HostedService;
 using Infrastructure.Configurations;
 using Infrastructure.HttpAcessor;
 using Infrastructure.Logging;
+using Infrastructure.Payments.MercadoPago;
 using Infrastructure.Repositories;
 using Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -17,6 +19,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
+using System;
 using System.Text;
 using System.Text.Json;
 
@@ -31,11 +34,44 @@ builder.Services.AddControllers()
                 });
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new()
+    {
+        Title = "NeuroFlow API",
+        Version = "v1"
+    });
+
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "Informe o token JWT no formato: Bearer {seu_token}"
+    });
+
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 builder.Services.AddDbContext<NeuroFlowContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
+
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
@@ -120,6 +156,8 @@ builder.Services.AddScoped<IMoodEntryRepository, MoodEntryRepository>();
 builder.Services.AddScoped<IThoughtEntryRepository, ThoughtEntryRepository>();
 builder.Services.AddScoped<IPatientInviteRepository, PatientInviteRepository>();
 builder.Services.AddScoped<ITokenAuditRepository, TokenAuditRepository>();
+builder.Services.AddScoped<IPremiumService, PremiumService>();
+
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 
@@ -149,6 +187,17 @@ builder.Host.UseSerilog();
 
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+
+    var context = scope.ServiceProvider.GetRequiredService<NeuroFlowContext>();
+
+    await context.Database.MigrateAsync();
+
+    await DatabaseSeeder.SeedAsync(scope.ServiceProvider);
+}
 
 if (app.Environment.IsDevelopment())
 {

@@ -9,6 +9,7 @@ using Domain.Interfaces.Repositories;
 namespace API.Controllers;
 
 [ApiController]
+
 [Route("api/appointments")]
 public class AppointmentController : ControllerBase
 {
@@ -25,11 +26,8 @@ public class AppointmentController : ControllerBase
     private string GetUserRole() =>
         User.FindFirstValue("role")!;
 
-    // -------------------------------------------------------------------------
-    // 1. Criar consulta  (PROFISSIONAL)
-    // -------------------------------------------------------------------------
     [HttpPost]
-    [Authorize]
+    [Authorize(Roles = "Admin,Professional,Assistent")]
     public async Task<IActionResult> Create([FromBody] CreateAppointmentRequest request)
     {
         var userId = GetUserId();
@@ -53,14 +51,12 @@ public class AppointmentController : ControllerBase
     }
 
     [HttpGet("professional/upcoming")]
-    [Authorize]
+    [Authorize(Roles = "Admin,Professional,Assistent")]
     public async Task<IActionResult> GetUpcomingForProfessional()
     {
         var userId = GetUserId();
         var role = GetUserRole();
 
-        if (role != "Professional")
-            return Forbid();
 
         var data = await _appointmentService.GetUpcomingByProfessionalAsync(userId);
 
@@ -70,7 +66,7 @@ public class AppointmentController : ControllerBase
         ));
     }
     [HttpGet("patient/upcoming")]
-    [Authorize]
+    [Authorize(Roles ="Patient")]
     public async Task<IActionResult> GetUpcomingForPatient()
     {
         var userId = GetUserId();
@@ -88,7 +84,7 @@ public class AppointmentController : ControllerBase
     }
 
     [HttpPatch("{appointmentId:guid}/cancel")]
-    [Authorize]
+    [Authorize(Roles = "Admin,Professional,Assistent")]
     public async Task<IActionResult> Cancel(Guid appointmentId)
     {
         try
@@ -103,7 +99,7 @@ public class AppointmentController : ControllerBase
     }
 
     [HttpPatch("{appointmentId:guid}/complete")]
-    [Authorize]
+    [Authorize(Roles = "Admin,Professional,Assistent")]
     public async Task<IActionResult> Complete(Guid appointmentId)
     {
         try

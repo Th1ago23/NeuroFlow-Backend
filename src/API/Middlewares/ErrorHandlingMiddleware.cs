@@ -1,8 +1,6 @@
-﻿using System.Net;
+﻿using Application.Common.Responses;
+using System.Net;
 using System.Text.Json;
-using Application.Common.Responses;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 
 namespace API.Middlewares;
 

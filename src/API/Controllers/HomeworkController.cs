@@ -30,18 +30,13 @@ public class HomeworkController : ControllerBase
         User.FindFirstValue("role")!;
 
     [HttpPost]
-    [Authorize]
+    [Authorize(Roles = "Admin,Professional,Assistent")]
     public async Task<IActionResult> Create([FromBody] CreateHomeworkRequest request)
     {
         try
         {
             var userId = GetUserId();
-            var role = GetUserRole();
 
-            if (role != "Professional")
-                return Forbid();
-
-            // Regra de domínio está no service
             var id = await _homeworkService.CreateAsync(request, userId);
 
             return Ok(ApiResponse<Guid>.Ok(id, "Tarefa criada com sucesso."));
@@ -53,7 +48,7 @@ public class HomeworkController : ControllerBase
     }
 
     [HttpGet("patient/{patientId:guid}")]
-    [Authorize]
+    [Authorize(Roles = "Admin,Professional,Assistent")]
     public async Task<IActionResult> GetByPatient(Guid patientId)
     {
         try
@@ -82,7 +77,7 @@ public class HomeworkController : ControllerBase
     }
 
     [HttpGet("professional")]
-    [Authorize]
+    [Authorize(Roles = "Admin,Professional,Assistent")]
     public async Task<IActionResult> GetByProfessional()
     {
         try
@@ -90,8 +85,6 @@ public class HomeworkController : ControllerBase
             var userId = GetUserId();
             var role = GetUserRole();
 
-            if (role != "Professional")
-                return Forbid();
 
             var list = await _homeworkService.GetByProfessionalAsync(userId);
 
@@ -104,7 +97,7 @@ public class HomeworkController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/done")]
-    [Authorize]
+    [Authorize(Roles = "Patient")]
     public async Task<IActionResult> MarkAsDone(Guid id)
     {
         try
@@ -112,8 +105,6 @@ public class HomeworkController : ControllerBase
             var userId = GetUserId();
             var role = GetUserRole();
 
-            if (role != "Patient")
-                return Forbid();
 
             await _homeworkService.MarkAsDoneAsync(id, userId);
 
@@ -126,16 +117,13 @@ public class HomeworkController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize]
+    [Authorize(Roles = "Admin,Professional,Assistent")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateHomeworkRequest request)
     {
         try
         {
             var userId = GetUserId();
             var role = GetUserRole();
-
-            if (role != "Professional")
-                return Forbid();
 
             await _homeworkService.UpdateAsync(id, request, userId);
 
@@ -148,16 +136,13 @@ public class HomeworkController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize]
+    [Authorize(Roles = "Admin,Professional,Assistent")]
     public async Task<IActionResult> Delete(Guid id)
     {
         try
         {
             var userId = GetUserId();
             var role = GetUserRole();
-
-            if (role != "Professional")
-                return Forbid();
 
             await _homeworkService.DeleteAsync(id, userId);
 
