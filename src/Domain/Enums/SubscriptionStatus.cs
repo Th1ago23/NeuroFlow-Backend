@@ -3,8 +3,9 @@
 public enum SubscriptionStatus
 {
     None = 0,
-    Active = 1,
-    Paused = 2,
-    Cancelled = 3,
-    ChargeFailed = 4
+    Pending= 1,
+    Active = 2,
+    Paused = 3,
+    Cancelled = 4,
+    ChargeFailed = 5
 }

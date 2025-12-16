@@ -1,49 +1,103 @@
 ﻿using Application.Common.Responses;
 using Application.DTO.Premium;
 using Application.Interfaces.Premium;
-using Infrastructure.Payments.MercadoPago;
+using API.Filters; // PremiumOnly
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Infrastructure.Payments.MercadoPago;
+using Domain.Enums;
 
-namespace API.Controllers;
-
-[ApiController]
-[Route("api/premium")]
-public class PremiumController : ControllerBase
+namespace API.Controllers
 {
-    private readonly IPremiumService _premiumService;
-
-    public PremiumController(IPremiumService premiumService)
+    [ApiController]
+    [Route("api/premium")]
+    public class PremiumController : ControllerBase
     {
-        _premiumService = premiumService;
-    }
+        private readonly IPremiumService _premiumService;
 
-    private Guid GetUserId() => Guid.Parse(User.FindFirstValue("uid")!);
+        public PremiumController(IPremiumService premiumService)
+        {
+            _premiumService = premiumService;
+        }
 
-    [HttpPost("subscribe")]
-    [Authorize(Roles = "Professional")]
-    public async Task<IActionResult> CreateSubscription(CancellationToken ct)
-    {
-        var userId = GetUserId();
+        private Guid GetUserId() => Guid.Parse(User.FindFirstValue("uid")!);
 
-        var result = await _premiumService.CreateSubscriptionAsync(userId, ct);
+        [HttpPost("subscribe")]
+        [Authorize(Roles = "Professional")]
+        public async Task<IActionResult> CreateSubscription(
+            [FromQuery] PremiumTier tier,
+            CancellationToken ct)
+        {
+            var userId = GetUserId();
+            var result = await _premiumService.CreateSubscriptionAsync(userId, tier, ct);
+            return Ok(ApiResponse<CreateSubscriptionResponse>.Ok(result));
+        }
 
-        return Ok(ApiResponse<CreateSubscriptionResponse>.Ok(result));
-    }
+        [HttpGet("status")]
+        [Authorize(Roles = "Professional")]
+        public async Task<IActionResult> GetStatus(CancellationToken ct)
+        {
+            var userId = GetUserId();
+            var result = await _premiumService.GetStatusAsync(userId, ct);
 
-    [HttpPost("webhook")]
-    [AllowAnonymous]
-    public async Task<IActionResult> Webhook([FromBody] object raw, CancellationToken ct)
-    {
-        var json = raw.ToString();
+            return Ok(ApiResponse<PremiumStatusDto>.Ok(result));
+        }
 
-        if (string.IsNullOrWhiteSpace(json))
-            return BadRequest();
+        [HttpPost("webhook")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Webhook([FromBody] object raw, CancellationToken ct)
+        {
+            var json = raw.ToString();
 
-        var data = PremiumWebhookParser.Parse(json);
+            if (string.IsNullOrWhiteSpace(json))
+                return BadRequest(ApiResponse.Fail("Payload inválido."));
 
-        await _premiumService.ProcessWebhookAsync(data, ct);
-        return Ok();
+            var parsed = PremiumWebhookParser.Parse(json);
+
+            await _premiumService.ProcessWebhookAsync(parsed, ct);
+
+            return Ok();
+        }
+
+        [HttpGet("example-protected")]
+        [Authorize(Roles = "Professional")]
+        [PremiumOnly]
+        public IActionResult ExamplePremiumOnly()
+        {
+            return Ok(ApiResponse.Ok("Você tem acesso Premium 🚀"));
+        }
+        [HttpPost("cancel")]
+        [Authorize(Roles = "Professional")]
+        public async Task<IActionResult> Cancel(CancellationToken ct)
+        {
+            var userId = GetUserId();
+
+            await _premiumService.CancelSubscriptionAsync(userId, ct);
+
+            return Ok(ApiResponse.Ok("Assinatura cancelada com sucesso."));
+        }
+        [HttpGet("pricing")]
+        [AllowAnonymous]
+        public IActionResult GetPricing()
+        {
+            var plans = new[]
+            {
+        new PricingPlanDto(
+            Tier: PremiumTier.Premium,
+            Name: "Premium",
+            Price: 29.99m,
+            Description: "Acesso completo às funcionalidades profissionais."
+        ),
+        new PricingPlanDto(
+            Tier: PremiumTier.PremiumPlus,
+            Name: "Premium Plus",
+            Price: 79.99m,
+            Description: "Inclui IA avançada, transcrição e recomendações automáticas."
+        )
+    };
+
+            return Ok(ApiResponse<IEnumerable<PricingPlanDto>>.Ok(plans));
+        }
     }
 }

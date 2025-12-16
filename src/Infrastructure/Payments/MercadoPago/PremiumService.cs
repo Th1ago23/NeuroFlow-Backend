@@ -26,39 +26,43 @@ public class PremiumService : IPremiumService
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _settings.AccessToken);
     }
 
-    public async Task<CreateSubscriptionResponse> CreateSubscriptionAsync(Guid professionalUserId, CancellationToken ct)
+    public async Task<CreateSubscriptionResponse> CreateSubscriptionAsync(Guid professionalUserId,PremiumTier tier,CancellationToken ct)
     {
         var profile = await _profiles.GetByUserIdAsync(professionalUserId, ct);
 
         if (profile is null)
             throw new InvalidOperationException("Perfil profissional não encontrado.");
 
+        var planId = tier switch
+        {
+            PremiumTier.Premium => _settings.PlanPremiumId,
+            PremiumTier.PremiumPlus => _settings.PlanPremiumPlusId,
+            _ => throw new InvalidOperationException("Plano inválido.")
+        };
+
         var requestBody = new
         {
-            preapproval_plan_id = _settings.PlanId,
+            preapproval_plan_id = planId,
             payer_email = profile.User.Email.Address,
             back_url = _settings.SuccessUrl
         };
 
         var response = await _http.PostAsJsonAsync(
-            "https://api.mercadopago.com/preapproval",
-            requestBody,
-            ct);
+            "https://api.mercadopago.com/preapproval", requestBody, ct);
 
         response.EnsureSuccessStatusCode();
 
-        var json = await response.Content.ReadFromJsonAsync<MercadoPagoCreateSubscriptionResponse>(ct);
+        var json = await response.Content.ReadFromJsonAsync<dynamic>(ct);
 
-        if (json is null)
-            throw new InvalidOperationException("Erro ao criar assinatura no Mercado Pago.");
+        string initPoint = json.init_point;
+        string subscriptionId = json.id;
 
-        profile.MarkSubscriptionCreated(json.Id);
+        profile.MarkSubscriptionCreated(subscriptionId, tier);
 
         await _uow.CommitAsync();
 
-        return new CreateSubscriptionResponse(json.InitPoint, json.Id);
+        return new CreateSubscriptionResponse(initPoint, subscriptionId);
     }
-
     public async Task ProcessWebhookAsync(MercadoPagoWebhookData data, CancellationToken ct)
     {
         if (!string.Equals(data.Type, "preapproval", StringComparison.OrdinalIgnoreCase))
@@ -88,10 +92,15 @@ public class PremiumService : IPremiumService
         {
             case "authorized":
                 profile.ActivatePremium(preapproval.Id, nextDate);
+                profile.ResetPaymentFailures();
+                break;
+
+            case "pending":
+                profile.MarkSubscriptionPending();
                 break;
 
             case "paused":
-                profile.PausePremium();
+                profile.MarkPaymentFailedWithRetry();
                 break;
 
             case "cancelled":
@@ -100,8 +109,14 @@ public class PremiumService : IPremiumService
                 profile.CancelPremium();
                 break;
 
+            case "rejected":
+            case "charged_back":
+            case "charged_back_by_bank":
+                profile.MarkPaymentFailedWithRetry();
+                break;
+
             default:
-                profile.MarkChargeFailed();
+                profile.MarkPaymentFailedWithRetry();
                 break;
         }
 
@@ -120,7 +135,8 @@ public class PremiumService : IPremiumService
             Status: profile.SubscriptionStatus?.ToString() ?? "none",
             NextBillingDate: profile.NextBillingDate,
             ActivatedAt: profile.PremiumActivatedAt,
-            SubscriptionId: profile.SubscriptionId
+            SubscriptionId: profile.SubscriptionId,
+            Tier: profile.Tier
         );
     }
     public async Task ValidatePremiumAsync(Guid userId, CancellationToken ct)
@@ -156,6 +172,36 @@ public class PremiumService : IPremiumService
         {
             throw new UnauthorizedAccessException("Sua assinatura expirou. Atualize o pagamento.");
         }
+    }
+    public async Task CancelSubscriptionAsync(Guid userId, CancellationToken ct)
+    {
+        var profile = await _profiles.FirstOrDefaultAsync(p => p.UserId == userId, ct);
+
+        if (profile is null)
+            throw new InvalidOperationException("Perfil profissional não encontrado.");
+
+        if (string.IsNullOrWhiteSpace(profile.SubscriptionId))
+            throw new InvalidOperationException("Nenhuma assinatura ativa foi encontrada.");
+
+        var requestBody = new
+        {
+            status = "cancelled"
+        };
+
+        var response = await _http.PutAsJsonAsync(
+            $"https://api.mercadopago.com/preapproval/{profile.SubscriptionId}",
+            requestBody,
+            ct);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var msg = await response.Content.ReadAsStringAsync(ct);
+            throw new InvalidOperationException($"Erro ao cancelar assinatura: {msg}");
+        }
+
+        profile.CancelPremium();
+
+        await _uow.CommitAsync();
     }
 
 }

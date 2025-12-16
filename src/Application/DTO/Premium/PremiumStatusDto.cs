@@ -1,4 +1,6 @@
-﻿namespace Application.DTO.Premium;
+﻿using Domain.Enums;
 
-public sealed record PremiumStatusDto(bool IsPremium,string Status,DateTime? NextBillingDate,DateTime? ActivatedAt,string? SubscriptionId);
+namespace Application.DTO.Premium;
+
+public sealed record PremiumStatusDto(bool IsPremium,string Status,DateTime? NextBillingDate,DateTime? ActivatedAt,string? SubscriptionId, PremiumTier Tier);
 

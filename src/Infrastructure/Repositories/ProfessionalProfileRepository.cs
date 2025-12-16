@@ -24,4 +24,14 @@ public class ProfessionalProfileRepository : BaseRepository<ProfessionalProfile>
     {
         return await _dbSet.FirstOrDefaultAsync(p => p.SubscriptionId == subscriptionId, ct);
     }
+    public async Task<IEnumerable<ProfessionalProfile>> GetProfilesWithRetryDueAsync(DateTime now, CancellationToken ct)
+    {
+        return await _dbSet
+            .Where(p =>
+                p.IsPremium == false &&
+                p.SubscriptionId != null &&
+                p.NextRetryAt <= now &&
+                p.FailedAttempts < 3)
+            .ToListAsync(ct);
+    }
 }

@@ -6,6 +6,7 @@ using Application.Services;
 using Domain.Interfaces.Repositories;
 using Domain.Interfaces.Security;
 using Infrastructure.Auth;
+using Infrastructure.Background.HostedService;
 using Infrastructure.Configurations;
 using Infrastructure.HttpAcessor;
 using Infrastructure.Logging;
@@ -131,6 +132,7 @@ builder.Services.AddTransient<CorrelationIdMiddleware>();
 builder.Services.AddTransient<RequestLoggingMiddleware>();
 
 builder.Services.AddSingleton(typeof(IAppLogger<>), typeof(SerilogAppLogger<>));
+builder.Services.AddHostedService<RetryFailedPaymentsService>();
 
 
 Log.Logger = new LoggerConfiguration()

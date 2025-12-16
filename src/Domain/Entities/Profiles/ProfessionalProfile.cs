@@ -39,13 +39,54 @@ namespace Domain.Entities.Profiles
         public DateTime? PremiumActivatedAt { get; private set; }
         public DateTime? NextBillingDate { get; private set; }
         public SubscriptionStatus? SubscriptionStatus { get; private set; }
-        public void MarkSubscriptionCreated(string subscriptionId)
+        public PremiumTier Tier { get; private set; } = PremiumTier.None;
+        public int FailedAttempts { get; private set; }
+        public DateTime? NextRetryAt { get; private set; }
+
+        public void MarkPaymentFailedWithRetry()
+        {
+            FailedAttempts++;
+
+            if (FailedAttempts == 1)
+                NextRetryAt = DateTime.UtcNow.AddHours(24);
+
+            else if (FailedAttempts == 2)
+                NextRetryAt = DateTime.UtcNow.AddHours(48);
+
+            else if (FailedAttempts >= 3)
+                CancelPremium();
+            else
+                NextRetryAt = null;
+        }
+
+        public void MarkSubscriptionPending()
+        {
+            SubscriptionStatus = Domain.Enums.SubscriptionStatus.Pending;
+            IsPremium = false;
+            NextBillingDate = null;
+            PremiumActivatedAt = null;
+        }
+
+        public void ResetPaymentFailures()
+        {
+            FailedAttempts = 0;
+            NextRetryAt = null;
+        }
+        public void ActivatePremiumPlus(string subscriptionId, DateTime nextBillingDate)
+        {
+            IsPremium = true;
+            SubscriptionId = subscriptionId;
+            PremiumActivatedAt = DateTime.UtcNow;
+            NextBillingDate = nextBillingDate;
+            SubscriptionStatus = Domain.Enums.SubscriptionStatus.Active;
+
+            Tier = PremiumTier.PremiumPlus;
+        }
+        public void MarkSubscriptionCreated(string subscriptionId, PremiumTier tier)
         {
             SubscriptionId = subscriptionId;
-            SubscriptionStatus = Domain.Enums.SubscriptionStatus.Active;
-            IsPremium = false;
-            PremiumActivatedAt = null;
-            NextBillingDate = null;
+            Tier = tier;
+            SubscriptionStatus = Domain.Enums.SubscriptionStatus.Pending;
         }
         public void ActivatePremium(string subscriptionId, DateTime nextBillingDate)
         {
@@ -53,6 +94,7 @@ namespace Domain.Entities.Profiles
             SubscriptionId = subscriptionId;
             PremiumActivatedAt = DateTime.UtcNow;
             NextBillingDate = nextBillingDate;
+            Tier = PremiumTier.Premium;
             SubscriptionStatus = Domain.Enums.SubscriptionStatus.Active;
         }
         public void UpdateBilling(DateTime nextBillingDate)
@@ -63,6 +105,7 @@ namespace Domain.Entities.Profiles
         {
             SubscriptionStatus = Domain.Enums.SubscriptionStatus.Cancelled;
             IsPremium = false;
+            Tier = PremiumTier.None;
         }
         public void PausePremium()
         {
